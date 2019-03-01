@@ -2,7 +2,7 @@ package unshortener
 
 import (
 	"context"
-	"log"
+	_ "log"
 	"net/http"
 	"net/url"
 	"sync"
@@ -29,7 +29,6 @@ func UnshortenString(ctx context.Context, un Unshortener, str_u string) (*url.UR
 
 	select {
 	case <-ctx.Done():
-		log.Println("ALL DONE", str_u)
 		return nil, nil
 	default:
 		// pass

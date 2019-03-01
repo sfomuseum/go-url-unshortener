@@ -45,9 +45,7 @@ func main() {
 	signal.Notify(signal_ch, os.Interrupt, syscall.SIGTERM)
 
 	go func(c chan os.Signal) {
-
 		<-c
-
 		cancel()
 		os.Exit(0)
 	}(signal_ch)
@@ -144,12 +142,16 @@ func main() {
 
 			if rsp.Error != nil {
 
-				lookup.Store(rsp.ShortenedURL, "-")
+				lookup.Store(rsp.ShortenedURL, "?")
 				log.Printf("Failed to unshorted '%s' %s", rsp.ShortenedURL, rsp.Error)
 
 			} else {
 
-				lookup.Store(rsp.ShortenedURL, rsp.UnshortenedURL)
+				if rsp.ShortenedURL == rsp.UnshortenedURL {
+					lookup.Store(rsp.ShortenedURL, "-")
+				} else {
+					lookup.Store(rsp.ShortenedURL, rsp.UnshortenedURL)
+				}
 
 				if *verbose {
 					log.Printf("%s becomes %s\n", rsp.ShortenedURL, rsp.UnshortenedURL)
