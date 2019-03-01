@@ -5,8 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
-	"fmt"
+	_ "fmt"
 	"github.com/sfomuseum/go-url-unshortener"
+	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
@@ -22,6 +24,7 @@ func main() {
 	stdin := flag.Bool("stdin", false, "Read URLs from STDIN")
 	qps := flag.Int("qps", 10, "Number of (unshortening) queries per second")
 	to := flag.Int("timeout", 30, "Maximum number of seconds of for an unshorterning request")
+	seed_file := flag.String("seed", "", "Pre-fill the unshortening cache with data in this file")
 
 	flag.Parse()
 
@@ -34,7 +37,30 @@ func main() {
 		log.Fatal(err)
 	}
 
-	cache, err := unshortener.NewCachedUnshortener(worker)
+	seed := make(map[string]string)
+
+	if *seed_file != "" {
+
+		fh, err := os.Open(*seed_file)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		body, err := ioutil.ReadAll(fh)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = json.Unmarshal(body, &seed)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	cache, err := unshortener.NewCachedUnshortenerWithSeed(worker, seed)
 
 	if err != nil {
 		log.Fatal(err)
@@ -176,11 +202,15 @@ func main() {
 		return true
 	})
 
-	enc_report, err := json.Marshal(report)
+	writers := make([]io.Writer, 0)
+	writers = append(writers, os.Stdout)
+
+	out := io.MultiWriter(writers...)
+
+	enc := json.NewEncoder(out)
+	err = enc.Encode(report)
 
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Println(string(enc_report))
 }

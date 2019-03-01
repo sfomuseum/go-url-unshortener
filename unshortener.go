@@ -47,7 +47,7 @@ func UnshortenString(ctx context.Context, sh Unshortener, str_u string) (*url.UR
 func NewCachedUnshortener(worker Unshortener) (Unshortener, error) {
 
 	seed := make(map[string]string)
-	
+
 	return NewCachedUnshortenerWithSeed(worker, seed)
 }
 
@@ -63,7 +63,7 @@ func NewCachedUnshortenerWithSeed(worker Unshortener, seed map[string]string) (U
 		worker: worker,
 		cache:  cache,
 	}
-	
+
 	return &sh, nil
 }
 

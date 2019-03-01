@@ -81,6 +81,8 @@ Usage of ./bin/unshorten:
 	Display progress information
   -qps int
        Number of (unshortening) queries per second (default 10)
+  -seed string
+    	Pre-fill the unshortening cache with data in this file
   -stdin
 	Read URLs from STDIN
   -timeout int
@@ -152,4 +154,32 @@ time passes...
   "http://yfrog.com/gyc8yqbwj": "?",
   and so on...  
 }
+```
+
+Unshortened URLs that are the same as their input are encoded as `-`. URLs that were unable to be unshortened, for whatever reason, are encoded as `?`.
+
+You can also use the output of `unshorten` to pre-seed lookups for subsequent invocations. For example, to start you might do this:
+
+```
+$> grep expanded_url /path/to/tweet.js \
+	| awk '{ print $3 }' | sort | uniq | sed 's/^"//' | sed 's/"\,$//' \
+	| ./bin/unshorten -stdin \
+	> report-1.txt
+```
+
+Time will pass and unshortened URLs will be stored as a JSON-encoded dictionary in a file called `report-1.json`. At some later date you can run the same command but using `report-1.json` as a lookup table, using the `-seed report-1.txt` flag, writing the results to a second `report-2.json` file:
+
+```
+$> grep expanded_url /path/to/tweet.js \
+	| awk '{ print $3 }' | sort | uniq | sed 's/^"//' | sed 's/"\,$//' \
+	| ./bin/unshorten -stdin -seed report-1.txt \
+	> report-2.txt
+```
+
+Considerably less time will pass. This example assumes that `tweet.js` has not changed so both the `report-(n).json` files are the same:
+
+```
+$> ls -la report*.json
+-rw-r--r--. 1 user domain users 576949 Mar  1 14:24 report-1.json
+-rw-r--r--. 1 user domain users 576949 Mar  1 14:40 report-2.json
 ```
