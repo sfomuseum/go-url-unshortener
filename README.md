@@ -80,7 +80,10 @@ Usage of ./bin/unshorten:
 For example, let's say you wanted to unshorted all the `expanded_urls` URLs in a Twitter users `tweet.js` export file:
 
 ```
-grep expanded_url ./tweet.js | awk '{ print $3 }' | sort | uniq | sed 's/^"//' | sed 's/",$"//' | ./bin/unshorten -stdin -verbose
+$> grep expanded_url /path/to/tweet.js \
+	| awk '{ print $3 }' | sort | uniq | sed 's/^"//' | sed 's/",$"//' \
+	| ./bin/unshorten -stdin -verbose
+
 2019/03/01 11:57:47 Head http://airwaysnews.com/blog/2016/06/09/wow-air-kicks-off-san-francisco-service/%22,: dial tcp: lookup airwaysnews.com: no such host
 2019/03/01 11:57:48 http://4sq.com/RfgMa", becomes http://4sq.com/RfgMa%22,
 2019/03/01 11:57:48 Head http://CNN.com",: dial tcp: lookup CNN.com",: no such host
