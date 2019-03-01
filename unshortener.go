@@ -10,7 +10,6 @@ import (
 )
 
 type Unshortener interface {
-	UnshortenString(context.Context, string) (*url.URL, error)
 	Unshorten(context.Context, *url.URL) (*url.URL, error)
 }
 

@@ -58,6 +58,16 @@ func main() {
 }	
 ```
 
+## Interfaces
+
+### Unshortener
+
+```
+type Unshortener interface {
+	Unshorten(context.Context, *url.URL) (*url.URL, error)
+}
+```
+
 ## Tools
 
 ### unshorten
