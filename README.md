@@ -167,7 +167,9 @@ $> grep expanded_url /path/to/tweet.js \
 	> report-1.txt
 ```
 
-Time will pass and unshortened URLs will be stored as a JSON-encoded dictionary in a file called `report-1.json`. At some later date you can run the same command but using `report-1.json` as a lookup table, using the `-seed report-1.txt` flag, writing the results to a second `report-2.json` file:
+Time will pass and unshortened URLs will be stored as a JSON-encoded dictionary in a file called `report-1.json`.
+
+At some later date you can run the same command but using `report-1.json` as a lookup table, using the `-seed report-1.txt` flag, writing the results to a second `report-2.json` file:
 
 ```
 $> grep expanded_url /path/to/tweet.js \
