@@ -27,9 +27,10 @@ func main() {
 
 	flag.Parse()
 
+	timeout := time.Second / 30
 	rate := time.Second / 10
 	
-	worker, err := unshortener.NewThrottledUnshortener(rate)
+	worker, err := unshortener.NewThrottledUnshortener(rate, timeout)
 
 	if err != nil {
 		log.Fatal(err)
@@ -75,16 +76,17 @@ type Unshortener interface {
 Unshorten one or more URLs from the command-line (or STDIN).
 
 ```
-./bin/unshorten -h
 Usage of ./bin/unshorten:
   -progress
-    	Display progress information
+	Display progress information
   -qps int
-    	Number of (unshortening) queries per second (default 10)
+       Number of (unshortening) queries per second (default 10)
   -stdin
-    	Read URLs from STDIN
+	Read URLs from STDIN
+  -timeout int
+    	   Maximum number of seconds of for an unshorterning request (default 30)
   -verbose
-    	Be chatty about what's going on
+	Be chatty about what's going on
 ```
 
 For example, let's say you wanted to unshorted all the `expanded_urls` URLs in a Twitter users `tweet.js` export file:

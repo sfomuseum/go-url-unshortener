@@ -16,6 +16,7 @@ type Unshortener interface {
 type ThrottledUnshortener struct {
 	Unshortener
 	throttle <-chan time.Time
+	timeout  time.Duration
 	client   *http.Client
 }
 
@@ -25,7 +26,7 @@ type CachedUnshortener struct {
 	cache  *sync.Map
 }
 
-func UnshortenString(ctx context.Context, un Unshortener, str_u string) (*url.URL, error) {
+func UnshortenString(ctx context.Context, sh Unshortener, str_u string) (*url.URL, error) {
 
 	select {
 	case <-ctx.Done():
@@ -40,22 +41,22 @@ func UnshortenString(ctx context.Context, un Unshortener, str_u string) (*url.UR
 		return nil, err
 	}
 
-	return un.Unshorten(ctx, u)
+	return sh.Unshorten(ctx, u)
 }
 
 func NewCachedUnshortener(worker Unshortener) (Unshortener, error) {
 
 	cache := new(sync.Map)
 
-	un := CachedUnshortener{
+	sh := CachedUnshortener{
 		worker: worker,
 		cache:  cache,
 	}
 
-	return &un, nil
+	return &sh, nil
 }
 
-func (un *CachedUnshortener) Unshorten(ctx context.Context, u *url.URL) (*url.URL, error) {
+func (sh *CachedUnshortener) Unshorten(ctx context.Context, u *url.URL) (*url.URL, error) {
 
 	select {
 	case <-ctx.Done():
@@ -66,24 +67,24 @@ func (un *CachedUnshortener) Unshorten(ctx context.Context, u *url.URL) (*url.UR
 
 	str_url := u.String()
 
-	v, ok := un.cache.Load(str_url)
+	v, ok := sh.cache.Load(str_url)
 
 	if ok {
 		str_url = v.(string)
 		return url.Parse(str_url)
 	}
 
-	u2, err := un.worker.Unshorten(ctx, u)
+	u2, err := sh.worker.Unshorten(ctx, u)
 
 	if err != nil {
 		return nil, err
 	}
 
-	un.cache.Store(u.String(), u2.String())
+	sh.cache.Store(u.String(), u2.String())
 	return u2, nil
 }
 
-func NewThrottledUnshortener(rate time.Duration) (Unshortener, error) {
+func NewThrottledUnshortener(rate time.Duration, timeout time.Duration) (Unshortener, error) {
 
 	throttle := time.Tick(rate)
 
@@ -93,17 +94,31 @@ func NewThrottledUnshortener(rate time.Duration) (Unshortener, error) {
 		// https://jonathanmh.com/tracing-preventing-http-redirects-golang/
 	}
 
-	un := ThrottledUnshortener{
+	sh := ThrottledUnshortener{
 		throttle: throttle,
+		timeout:  timeout,
 		client:   client,
 	}
 
-	return &un, nil
+	return &sh, nil
 }
 
-func (un *ThrottledUnshortener) Unshorten(ctx context.Context, u *url.URL) (*url.URL, error) {
+func (sh *ThrottledUnshortener) Unshorten(ctx context.Context, u *url.URL) (*url.URL, error) {
 
-	<-un.throttle
+	/*
+		t1 := time.Now()
+		var t2 time.Time
+
+		defer func() {
+			log.Printf("TIME TO FETCH %s %v (%v)\n", u.String(), time.Since(t2), time.Since(t1))
+		}()
+	*/
+
+	<-sh.throttle
+
+	/*
+		t2 = time.Now()
+	*/
 
 	select {
 	case <-ctx.Done():
@@ -112,7 +127,16 @@ func (un *ThrottledUnshortener) Unshorten(ctx context.Context, u *url.URL) (*url
 		// pass
 	}
 
-	rsp, err := un.client.Head(u.String())
+	req_ctx, cancel := context.WithTimeout(ctx, sh.timeout)
+	defer cancel()
+
+	req, err := http.NewRequest(http.MethodHead, u.String(), nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	rsp, err := sh.client.Do(req.WithContext(req_ctx))
 
 	if err != nil {
 		return nil, err

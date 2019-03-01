@@ -21,12 +21,14 @@ func main() {
 	verbose := flag.Bool("verbose", false, "Be chatty about what's going on")
 	stdin := flag.Bool("stdin", false, "Read URLs from STDIN")
 	qps := flag.Int("qps", 10, "Number of (unshortening) queries per second")
+	to := flag.Int("timeout", 30, "Maximum number of seconds of for an unshorterning request")
 
 	flag.Parse()
 
 	rate := time.Second / time.Duration(*qps)
+	timeout := time.Second * time.Duration(*to)
 
-	worker, err := unshortener.NewThrottledUnshortener(rate)
+	worker, err := unshortener.NewThrottledUnshortener(rate, timeout)
 
 	if err != nil {
 		log.Fatal(err)
