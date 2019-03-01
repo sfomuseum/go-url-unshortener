@@ -45,7 +45,7 @@ func main() {
 	signal.Notify(signal_ch, os.Interrupt, syscall.SIGTERM)
 
 	go func(c chan os.Signal) {
-		
+
 		<-c
 
 		cancel()
@@ -82,7 +82,7 @@ func main() {
 
 			rsp_ch <- &rsp
 		}
-		
+
 		if u != nil {
 
 			rsp = UnshortenResponse{
@@ -127,7 +127,7 @@ func main() {
 				case <-completed_ch:
 					break
 				case <-time.After(10 * time.Second):
-					log.Printf("%d of %d URL left to unshorten\n", remaining, total)
+					log.Printf("%d of %d URLs left to unshorten\n", remaining, total)
 				}
 			}
 		}()

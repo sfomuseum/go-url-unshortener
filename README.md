@@ -1,6 +1,6 @@
 # go-url-unshortener
 
-...
+Tools for resolving URLs that may have been "shortened".
 
 ## Install
 
@@ -12,13 +12,72 @@ make bin
 
 All of this package's dependencies are bundled with the code in the `vendor` directory.
 
-## Important
+## Example
 
-This should still be considered experimental.
+```
+import (
+       "context"
+       "flag"
+	"github.com/sfomuseum/go-url-unshortener"       
+       "log"
+       "time"
+)
+
+func main() {
+
+	flag.Parse()
+
+	rate := time.Second / 10
+	
+	worker, err := unshortener.NewThrottledUnshortener(rate)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	cache, err := unshortener.NewCachedUnshortener(worker)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	for _, str_url := range flag.Args() {
+
+		u, err := unshortener.UnshortenString(ctx, cache, str_url)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		log.Println(u.String())
+	}
+	
+}	
+```
 
 ## Tools
 
 ### unshorten
+
+Unshorten one or more URLs from the command-line (or STDIN).
+
+```
+./bin/unshorten -h
+Usage of ./bin/unshorten:
+  -progress
+    	Display progress information
+  -qps int
+    	Number of (unshortening) queries per second (default 10)
+  -stdin
+    	Read URLs from STDIN
+  -verbose
+    	Be chatty about what's going on
+```
+
+For example, let's say you wanted to unshorted all the `expanded_urls` URLs in a Twitter users `tweet.js` export file:
 
 ```
 grep expanded_url ./tweet.js | awk '{ print $3 }' | sort | uniq | sed 's/^"//' | sed 's/",$"//' | ./bin/unshorten -stdin -verbose
