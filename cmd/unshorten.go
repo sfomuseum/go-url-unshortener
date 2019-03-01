@@ -9,18 +9,22 @@ import (
 	"github.com/sfomuseum/go-url-unshortener"
 	"log"
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 )
 
 func main() {
 
+	progress := flag.Bool("progress", false, "Display progress information")
 	verbose := flag.Bool("verbose", false, "Be chatty about what's going on")
 	stdin := flag.Bool("stdin", false, "Read URLs from STDIN")
+	qps := flag.Int("qps", 10, "Number of (unshortening) queries per second")
 
 	flag.Parse()
 
-	rate := time.Second / 10
+	rate := time.Second / time.Duration(*qps)
 
 	worker, err := unshortener.NewThrottledUnshortener(rate)
 
@@ -37,15 +41,26 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	signal_ch := make(chan os.Signal)
+	signal.Notify(signal_ch, os.Interrupt, syscall.SIGTERM)
+
+	go func(c chan os.Signal) {
+		
+		<-c
+
+		cancel()
+		os.Exit(0)
+	}(signal_ch)
+
 	remaining := 0
 
 	type UnshortenResponse struct {
 		ShortenedURL   string
 		UnshortenedURL string
+		Error          error
 	}
 
 	done_ch := make(chan bool)
-	err_ch := make(chan error)
 	rsp_ch := make(chan *UnshortenResponse)
 
 	unshorten := func(ctx context.Context, str_url string) {
@@ -56,17 +71,29 @@ func main() {
 
 		u, err := unshortener.UnshortenString(ctx, cache, str_url)
 
+		var rsp UnshortenResponse
+
 		if err != nil {
-			err_ch <- err
-			return
+
+			rsp = UnshortenResponse{
+				ShortenedURL: str_url,
+				Error:        err,
+			}
+
+			rsp_ch <- &rsp
+		}
+		
+		if u != nil {
+
+			rsp = UnshortenResponse{
+				ShortenedURL:   str_url,
+				UnshortenedURL: u.String(),
+			}
+
+			rsp_ch <- &rsp
 		}
 
-		rsp := UnshortenResponse{
-			ShortenedURL:   str_url,
-			UnshortenedURL: u.String(),
-		}
-
-		rsp_ch <- &rsp
+		// assume that ctx.Done() has been invoked
 	}
 
 	if *stdin {
@@ -91,7 +118,7 @@ func main() {
 
 	completed_ch := make(chan bool)
 
-	if *verbose {
+	if *progress {
 
 		go func() {
 
@@ -113,13 +140,20 @@ func main() {
 		select {
 		case <-done_ch:
 			remaining -= 1
-		case err := <-err_ch:
-			log.Println(err)
 		case rsp := <-rsp_ch:
-			lookup.Store(rsp.ShortenedURL, rsp.UnshortenedURL)
 
-			if *verbose {
-				log.Printf("%s becomes %s\n", rsp.ShortenedURL, rsp.UnshortenedURL)
+			if rsp.Error != nil {
+
+				lookup.Store(rsp.ShortenedURL, "-")
+				log.Printf("Failed to unshorted '%s' %s", rsp.ShortenedURL, rsp.Error)
+
+			} else {
+
+				lookup.Store(rsp.ShortenedURL, rsp.UnshortenedURL)
+
+				if *verbose {
+					log.Printf("%s becomes %s\n", rsp.ShortenedURL, rsp.UnshortenedURL)
+				}
 			}
 
 		default:
