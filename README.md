@@ -156,7 +156,7 @@ time passes...
 }
 ```
 
-Unshortened URLs that are the same as their input are encoded as `-`. URLs that were unable to be unshortened, for whatever reason, are encoded as `?`.
+Unshortened URLs that are the same as their input are encoded as `"-"`. URLs that were unable to be unshortened, for whatever reason, are encoded as `"?"`.
 
 You can also use the output of `unshorten` to pre-seed lookups for subsequent invocations. For example, to start you might do this:
 
