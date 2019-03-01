@@ -15,6 +15,7 @@ import (
 
 func main() {
 
+	verbose := flag.Bool("verbose", false, "Be chatty about what's going on")
 	stdin := flag.Bool("stdin", false, "Read URLs from STDIN")
 
 	flag.Parse()
@@ -39,14 +40,14 @@ func main() {
 	remaining := 0
 
 	type UnshortenResponse struct {
-		ShortenedURL string
+		ShortenedURL   string
 		UnshortenedURL string
 	}
-	
+
 	done_ch := make(chan bool)
 	err_ch := make(chan error)
 	rsp_ch := make(chan *UnshortenResponse)
-	
+
 	unshorten := func(ctx context.Context, str_url string) {
 
 		defer func() {
@@ -61,7 +62,7 @@ func main() {
 		}
 
 		rsp := UnshortenResponse{
-			ShortenedURL: str_url,
+			ShortenedURL:   str_url,
 			UnshortenedURL: u.String(),
 		}
 
@@ -86,8 +87,27 @@ func main() {
 		}
 	}
 
+	total := remaining
+
+	completed_ch := make(chan bool)
+
+	if *verbose {
+
+		go func() {
+
+			for {
+				select {
+				case <-completed_ch:
+					break
+				case <-time.After(1 * time.Minute):
+					log.Printf("%d of %d URL left to unshorten\n", remaining, total)
+				}
+			}
+		}()
+	}
+
 	lookup := new(sync.Map)
-	
+
 	for remaining > 0 {
 
 		select {
@@ -95,18 +115,25 @@ func main() {
 			remaining -= 1
 		case err := <-err_ch:
 			log.Println(err)
-		case rsp := <- rsp_ch:
+		case rsp := <-rsp_ch:
 			lookup.Store(rsp.ShortenedURL, rsp.UnshortenedURL)
+
+			if *verbose {
+				log.Printf("%s becomes %s\n", rsp.ShortenedURL, rsp.UnshortenedURL)
+			}
+
 		default:
 			// log.Println(remaining)
 		}
 	}
 
+	completed_ch <- true
+
 	report := make(map[string]string)
 
 	lookup.Range(func(k interface{}, v interface{}) bool {
 		shortened_url := k.(string)
-		unshortened_url := v.(string)		
+		unshortened_url := v.(string)
 		report[shortened_url] = unshortened_url
 		return true
 	})
