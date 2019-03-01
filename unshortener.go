@@ -1,16 +1,17 @@
 package unshortener
 
 import (
+	"context"
 	_ "log"
 	"net/http"
 	"net/url"
-	"time"
 	"sync"
+	"time"
 )
 
 type Unshortener interface {
-	UnshortenString(u string) (*url.URL, error)
-	Unshorten(u *url.URL) (*url.URL, error)
+	UnshortenString(context.Context, string) (*url.URL, error)
+	Unshorten(context.Context, *url.URL) (*url.URL, error)
 }
 
 type ThrottledUnshortener struct {
@@ -22,10 +23,17 @@ type ThrottledUnshortener struct {
 type CachedUnshortener struct {
 	Unshortener
 	worker Unshortener
-	cache *sync.Map
+	cache  *sync.Map
 }
 
-func UnshortenString(un Unshortener, str_u string) (*url.URL, error) {
+func UnshortenString(ctx context.Context, un Unshortener, str_u string) (*url.URL, error) {
+
+	select {
+	case <-ctx.Done():
+		return nil, nil
+	default:
+		// pass
+	}
 
 	u, err := url.Parse(str_u)
 
@@ -33,25 +41,32 @@ func UnshortenString(un Unshortener, str_u string) (*url.URL, error) {
 		return nil, err
 	}
 
-	return un.Unshorten(u)
+	return un.Unshorten(ctx, u)
 }
 
 func NewCachedUnshortener(worker Unshortener) (Unshortener, error) {
 
 	cache := new(sync.Map)
-	
+
 	un := CachedUnshortener{
 		worker: worker,
-		cache: cache,
+		cache:  cache,
 	}
 
 	return &un, nil
 }
 
-func (un *CachedUnshortener) Unshorten(u *url.URL) (*url.URL, error) {
+func (un *CachedUnshortener) Unshorten(ctx context.Context, u *url.URL) (*url.URL, error) {
+
+	select {
+	case <-ctx.Done():
+		return nil, nil
+	default:
+		// pass
+	}
 
 	str_url := u.String()
-	
+
 	v, ok := un.cache.Load(str_url)
 
 	if ok {
@@ -59,7 +74,7 @@ func (un *CachedUnshortener) Unshorten(u *url.URL) (*url.URL, error) {
 		return url.Parse(str_url)
 	}
 
-	u2, err := un.worker.Unshorten(u)
+	u2, err := un.worker.Unshorten(ctx, u)
 
 	if err != nil {
 		return nil, err
@@ -87,9 +102,16 @@ func NewThrottledUnshortener(rate time.Duration) (Unshortener, error) {
 	return &un, nil
 }
 
-func (un *ThrottledUnshortener) Unshorten(u *url.URL) (*url.URL, error) {
+func (un *ThrottledUnshortener) Unshorten(ctx context.Context, u *url.URL) (*url.URL, error) {
 
 	<-un.throttle
+
+	select {
+	case <-ctx.Done():
+		return nil, nil
+	default:
+		// pass
+	}
 
 	rsp, err := un.client.Head(u.String())
 
