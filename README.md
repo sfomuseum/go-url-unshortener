@@ -125,5 +125,31 @@ time passes...
   "http://4sq.com/LZ6065\",": "https://www.swarmapp.com/markus64/checkin/4fde3986e4b0d087148b9fa1?s=iGxZKLJkCW3q31WNgDyewEV9dRI&ref=tw",
   "http://4sq.com/RfgMa\",": "http://4sq.com/RfgMa%22,",
   and so on...
+  
+  "http://sfomuseum.org": "https://www.flysfo.com/museum",
+  "http://sfomuseum.tumblr.com": "-",
+  "http://sfomuseum.tumblr.com/": "-",
+  "http://sfomuseum.tumblr.com/post/129239878186/today-is-askacurator-day-on-twitter-and-we": "http://sfomuseum.tumblr.com/post/129239878186/today-was-askacurator-day-on-twitter-and-we#_=_",
+  "http://sfomuseum.tumblr.com/post/129248260051/ask": "-",
+  "http://sfomuseum.tumblr.com/post/130087062136/the-san-francisco-49ers-first-mascot-was-a-mule": "-",
+  "http://sfomuseum.tumblr.com/post/132123520141/bonnie-jones-moon-worked-for-pan-american-world": "-",
+  "http://sfomuseum.tumblr.com/post/132218459498/friday-november-6-600-pm-in-the-aviation": "-",
+  "http://sfomuseum.tumblr.com/post/132416845556/sfo-museum-based-at-san-francisco-international": "-",
+  "http://sfomuseum.tumblr.com/post/133504040926/ida-staggers-was-first-hired-by-twa": "-",
+  and so on...
+  
+  "http://www.youtube.com/watch?v=vPaqRmByXo4": "https://www.youtube.com/watch?v=vPaqRmByXo4",
+  "http://yfrog.com/es4vbedj": "http://imageshack.com/lost",
+  "http://yfrog.com/es554ccj": "http://imageshack.com/lost",
+  "http://yfrog.com/esg8bfwj": "http://imageshack.com/lost",
+  "http://yfrog.com/esj53hj": "http://imageshack.com/lost",
+  "http://yfrog.com/esm4gvvj": "http://imageshack.com/lost",
+  "http://yfrog.com/esq63gkj": "http://imageshack.com/lost",
+  "http://yfrog.com/g09u1okj": "http://imageshack.com/lost",
+  "http://yfrog.com/gy2hiosj": "http://imageshack.com/lost",
+  "http://yfrog.com/gy486zkj": "?",
+  "http://yfrog.com/gy8x5drhj": "?",
+  "http://yfrog.com/gyc8yqbwj": "?",
+  and so on...  
 }
 ```
