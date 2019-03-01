@@ -92,7 +92,8 @@ For example, let's say you wanted to unshorted all the `expanded_urls` URLs in a
 ```
 $> grep expanded_url /path/to/tweet.js \
 	| awk '{ print $3 }' | sort | uniq | sed 's/^"//' | sed 's/",$"//' \
-	| ./bin/unshorten -stdin -verbose
+	| ./bin/unshorten -stdin -verbose \
+	| jq
 
 2019/03/01 11:57:47 Head http://airwaysnews.com/blog/2016/06/09/wow-air-kicks-off-san-francisco-service/%22,: dial tcp: lookup airwaysnews.com: no such host
 2019/03/01 11:57:48 http://4sq.com/RfgMa", becomes http://4sq.com/RfgMa%22,
@@ -112,5 +113,15 @@ $> grep expanded_url /path/to/tweet.js \
 2019/03/01 11:57:52 http://bit.ly/1U7sdhL", becomes https://www.flysfo.com/museum/aviation-museum-library/collection?field_type_collection_tid_1=1025
 2019/03/01 11:57:52 http://1.usa.gov/KmedO3", becomes https://www.nga.gov/404status.html
 2019/03/01 11:57:52 http://bit.ly/1WLCpRH", becomes https://www.flysfo.com/museum/aviation-museum-library/collection/10319
-... and so on
+time passes...
+{
+  "http://1.usa.gov/1LbxdUe\",": "https://www.transportation.gov/fastlane/women-in-aviation-connect-engage-inspire",
+  "http://1.usa.gov/KmedO3\",": "https://www.nga.gov/404status.html",
+  "http://4sq.com/15C3nS9\",": "https://www.swarmapp.com/sewsueme/checkin/5175d467e4b00b60396d301f?s=ZUQsGNttwY1X92Fo9zyyqpIiosc&ref=tw",
+  "http://4sq.com/19iEU6u\",": "https://www.swarmapp.com/user/2832802/checkin/51f03a77498e999f9b58b44c?s=nXhx2Qx9kBxeWJuU2ox9cSptX6M&ref=tw",
+  "http://4sq.com/1hlKD0H\",": "https://www.swarmapp.com/alli_burnie/checkin/53921a8f498eb18ae1c920ea?s=u804xRsf3TFZVBKpusk8erpBnMk&ref=tw",
+  "http://4sq.com/LZ6065\",": "https://www.swarmapp.com/markus64/checkin/4fde3986e4b0d087148b9fa1?s=iGxZKLJkCW3q31WNgDyewEV9dRI&ref=tw",
+  "http://4sq.com/RfgMa\",": "http://4sq.com/RfgMa%22,",
+  and so on...
+}
 ```
