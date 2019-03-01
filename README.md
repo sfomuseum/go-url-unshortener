@@ -93,7 +93,7 @@ For example, let's say you wanted to unshorted all the `expanded_urls` URLs in a
 
 ```
 $> grep expanded_url /path/to/tweet.js \
-	| awk '{ print $3 }' | sort | uniq | sed 's/^"//' | sed 's/"\,$"//' \
+	| awk '{ print $3 }' | sort | uniq | sed 's/^"//' | sed 's/"\,$//' \
 	| ./bin/unshorten -stdin -verbose \
 	| jq
 
