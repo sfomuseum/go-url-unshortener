@@ -1,10 +1,15 @@
 package main
 
 import (
+	"bufio"
 	"context"
+	"encoding/json"
 	"flag"
+	"fmt"
 	"github.com/sfomuseum/go-url-unshortener"
 	"log"
+	"os"
+	"sync"
 	"time"
 )
 
@@ -33,9 +38,15 @@ func main() {
 
 	remaining := 0
 
+	type UnshortenResponse struct {
+		ShortenedURL string
+		UnshortenedURL string
+	}
+	
 	done_ch := make(chan bool)
 	err_ch := make(chan error)
-
+	rsp_ch := make(chan *UnshortenResponse)
+	
 	unshorten := func(ctx context.Context, str_url string) {
 
 		defer func() {
@@ -49,10 +60,23 @@ func main() {
 			return
 		}
 
-		log.Println(u.String())
+		rsp := UnshortenResponse{
+			ShortenedURL: str_url,
+			UnshortenedURL: u.String(),
+		}
+
+		rsp_ch <- &rsp
 	}
 
 	if *stdin {
+
+		scanner := bufio.NewScanner(os.Stdin)
+
+		for scanner.Scan() {
+			remaining += 1
+			str_url := scanner.Text()
+			go unshorten(ctx, str_url)
+		}
 
 	} else {
 
@@ -62,6 +86,8 @@ func main() {
 		}
 	}
 
+	lookup := new(sync.Map)
+	
 	for remaining > 0 {
 
 		select {
@@ -69,8 +95,27 @@ func main() {
 			remaining -= 1
 		case err := <-err_ch:
 			log.Println(err)
+		case rsp := <- rsp_ch:
+			lookup.Store(rsp.ShortenedURL, rsp.UnshortenedURL)
 		default:
-			// pass
+			// log.Println(remaining)
 		}
 	}
+
+	report := make(map[string]string)
+
+	lookup.Range(func(k interface{}, v interface{}) bool {
+		shortened_url := k.(string)
+		unshortened_url := v.(string)		
+		report[shortened_url] = unshortened_url
+		return true
+	})
+
+	enc_report, err := json.Marshal(report)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(string(enc_report))
 }
