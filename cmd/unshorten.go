@@ -126,7 +126,7 @@ func main() {
 				select {
 				case <-completed_ch:
 					break
-				case <-time.After(1 * time.Minute):
+				case <-time.After(10 * time.Second):
 					log.Printf("%d of %d URL left to unshorten\n", remaining, total)
 				}
 			}
